@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "Ruzu Anki pop-ups",
+    "description": "The name of the application"
+  },
+  "appDescription": {
+    "message": "Chrome extension that periodically presents Anki cards via notifications",
+    "description": "The description of the application"
+  }
+}

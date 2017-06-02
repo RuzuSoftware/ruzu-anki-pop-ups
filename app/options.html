@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Ruzu Anki pop-ups settings</title>
+  <link href="https://bootswatch.com/paper/bootstrap.min.css" rel="stylesheet">
+  <!-- build:css styles/options-vendor.css -->
+  <!-- bower:css -->
+  <!-- endbower -->
+  <!-- endbuild -->
+  <!-- build:css styles/options.css -->
+  <link href="styles/options.css" rel="stylesheet">
+  <!-- endbuild -->
+</head>
+
+<body>
+  <div class="form-group">
+    <legend>Settings</legend>
+    <div id="connection_error" style="display: none;">
+      <p>Error connecting to Anki.</p>
+      <p>Please ensure that Anki is running and try again.</p>
+      <br/>
+      <button id="tryAgain" class="btn btn-default">Try Again</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="frequency">Test frequency</label>
+    <select class="form-control" id="frequency">
+      <option value="5">Every 5 minutes</option>
+      <option value="10">Every 10 minutes</option>
+      <option value="15">Every 15 minutes</option>
+      <option value="20">Every 20 minutes</option>
+      <option value="25">Every 25 minutes</option>
+      <option value="30">Every 30 minutes</option>
+      <option value="45">Every 45 minutes</option>
+      <option value="60">Every hour</option>
+      <option value="120">Every 2 hours</option>
+    </select>
+  </div>
+
+  <div class="form-group" style="display: none;">
+    <label for="test_amt">Test amount
+      <small class="form-text text-muted">Coming soon!</small>
+    </label>
+    <select class="form-control" id="test_amt" disabled="true">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+  </div>
+
+  <div class="form-check">
+    <label class="form-check-label">
+      <input type="checkbox" class="form-check-input" id="enabled"> Enable test notifications
+    </label>
+  </div>
+
+  <div class="form-check">
+    <label class="form-check-label">
+      <input type="checkbox" class="form-check-input" id="send_answers"> Submit answers to Anki
+    </label>
+  </div>
+
+  <div class="form-check" style="display: none;">
+    <label class="form-check-label">
+      <input type="checkbox" class="form-check-input" id="sync" disabled="true"> Sync settings to other devices
+      <small class="form-text text-muted">Coming soon!</small>
+    </label>
+  </div>
+
+  <div id="status" style="opacity: 0;">.</div>
+  <br/>
+  <button id="save" class="btn btn-success">Save</button>
+  <button id="showNextQuestion" class="btn btn-primary" disabled="true">Show next question</button>
+  <!-- build:js scripts/options-vendor.js -->
+  <!-- bower:js -->
+  <script src="bower_components/jquery/dist/jquery.js"></script>
+  <!-- endbower -->
+  <!-- endbuild -->
+
+  <!-- build:js scripts/options.js -->
+  <script src="scripts/config.js"></script>
+  <script src="scripts/options.js"></script>
+  <!-- endbuild -->
+</body>
+
+</html>

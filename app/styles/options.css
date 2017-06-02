@@ -1,0 +1,9 @@
+body {
+  margin: auto;
+  padding: 10px;
+  min-width: 500px;
+  max-width: 600px;
+}
+#showNextQuestion {
+  float: right;
+}
