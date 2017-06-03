@@ -1,18 +1,10 @@
 'use strict';
 
-// Copyright (c) 2016 Ruzu Studios. All rights reserved.
+// Copyright (c) 2017 Ruzu Studios. All rights reserved.
 
 var not_list = [];
-var questions = [];
 var qnum = 0;
-var totalQnums = 0;
 var error_not;
-var course_id;
-var resp;
-var everthing_ok = true;
-var csrftoken;
-var idleCount = 0;
-var sessionOpen = false;
 var globalCard;
 
 
@@ -36,12 +28,6 @@ function validNotID(notifId, callback) {
  */
 function popUpTest() {
 
-  /*
-   * initial      - 1 - Get next card and display
-   * gotCard      - 1.1 - Already have next card, just display
-   * showingCard  - 2 - Show answer (and buttons) for current card
-   * cardAnswered - 3 - Send answer for current card
-   */
   checkState(function(currentState) {
     console.log('window_state: ' + currentState.window_state);
     console.log('review_state: ' + currentState.review_state);
@@ -59,11 +45,6 @@ function popUpTest() {
             } else {
               var question = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
             }
-
-            var answer1 = thisCard.answerButtons[0][1] + ' ' + thisCard.answerButtons[0][0];
-            var answer2 = thisCard.answerButtons[1][1] + ' ' + thisCard.answerButtons[1][0];
-            var answer3 = 'Answer 3';
-            var answer4 = 'Answer 4';
 
             var optionsType;
             var optionsTitle;
@@ -129,22 +110,52 @@ function showAns(notifId) {
           } else {
             var answer = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
           }
+
+          if (thisCard.answerButtons.length == 1) {
+            var cardButtons = [{
+              title: thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1],
+            }];
+            var stages = 1;
+          } else if (thisCard.answerButtons.length == 2) {
+            var cardButtons = [{
+              title: thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1],
+            }, {
+              title: thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1],
+            }];
+            var stages = 1;
+          } else if (thisCard.answerButtons.length == 3) {
+            var cardButtons = [{
+              title: thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1],
+            }, {
+              title: thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1] + ' ' + spacer + ' ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1],
+            }];
+            var stages = 2;
+          } else if (thisCard.answerButtons.length == 4) {
+            var cardButtons = [{
+              title: thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1] + ' ' + spacer + ' ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1],
+            }, {
+              title: thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1] + ' ' + spacer + ' ' + thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1],
+            }];
+            var stages = 2;
+          } else {
+            //Some error
+          }
+
           var options = {
             message: answer,
             contextMessage: '',
-            buttons: [{
-              title: 'answer1' + ' ' + spacer + ' ' + 'answer2',
-            }, {
-              title: 'answer3' + ' ' + spacer + ' ' + 'answer4',
-            }]
+            buttons: cardButtons
           };
 
           chrome.notifications.update(notifId, options);
 
-          //Mark notification as stage 2
+          //Mark notification as stage 1
           not_list.map(function(not) {
             if (not.notID == notifId) {
-              not.stage = 2;
+              not.answerButtons = thisCard.answerButtons;
+              not.card_id = thisCard.id;
+              not.stage = 1;
+              not.stages = stages;
             }
           });
         } else {
@@ -163,6 +174,83 @@ function showAns(notifId) {
     }
   });
 }
+
+/*
+ * Update buttons or answer card depending on notification stage
+ */
+function answerQuestion(validNot, btnIdx) {
+  getNextCard(function(thisCard) {
+    if (thisCard.success == 'true' && thisCard.id == validNot.card_id) {
+      if (validNot.stage == 1 && validNot.stages == 2) {
+        var update_notification = true;
+        if (validNot.answerButtons.length == 3) {
+          if (btnIdx == 0) {
+            chrome.notifications.clear(validNot.notID);
+            console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
+            update_notification = false;
+          } else {
+            var options = {
+              buttons: [{
+                title: thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1],
+              }, {
+                title: thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1],
+              }]
+            };
+          }
+        } else {
+          if (btnIdx == 0) {
+            var options = {
+              buttons: [{
+                title: thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1],
+              }, {
+                title: thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1],
+              }]
+            };
+          } else {
+            var options = {
+              buttons: [{
+                title: thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1],
+              }, {
+                title: thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1],
+              }]
+            };
+          }
+        }
+
+        if (update_notification) {
+          chrome.notifications.update(validNot.notID, options);
+
+          //Mark notification as stage 2
+          not_list.map(function(not) {
+            if (not.notID == validNot.notID) {
+              not.stage = 2;
+              not.first_ans = btnIdx;
+            }
+          });
+        }
+      } else {
+        chrome.notifications.clear(validNot.notID);
+        if (validNot.stages == 2 && validNot.first_ans != 0) {
+          if (btnIdx == 0) {
+            console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
+          } else {
+            console.log('Send answer - ' + thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1]);
+          }
+        } else {
+          if (btnIdx == 0) {
+            console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
+          } else {
+            console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
+          }
+        }
+      }
+    } else {
+      console.log('Card on notification has expired...');
+      console.log(thisCard.id + ' != ' + validNot.card_id);
+    }
+  });
+}
+
 /*
  * Revert a buttion at stage 2 to stage 1 to
  * show all 4 options again as it did initially
@@ -201,17 +289,14 @@ function setIconStatus(status) {
 
   switch (status) {
     case 'On':
-      everthing_ok = true;
       badgeBackgroundColor = '#5cb85c';
-      badgeText = 'On';
+      badgeText = status;
       break;
     case 'Error':
-      everthing_ok = false;
       badgeBackgroundColor = '#ff033e';
       badgeText = status;
       break;
     case 'Off':
-      everthing_ok = true;
       badgeBackgroundColor = '#1e90ff';
       badgeText = status;
       break;
@@ -408,11 +493,8 @@ function openOptions() {
  */
 chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
   validNotID(notifId, function(validNot) {
-    if (validNot && validNot.stage == 1) {
-      console.log('ShowAnswer');
-    } else if (validNot && validNot.stage == 2) {
-      chrome.notifications.clear(notifId);
-      console.log('AnswerQuestion');
+    if (validNot) {
+      answerQuestion(validNot, btnIdx);
     } else if (notifId == error_not) {
       if (btnIdx === 0) {
         openOptions();
@@ -474,15 +556,9 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       var secs = (settings.frequency * 2) * 60
       chrome.idle.queryState(secs, function(state) {
         if (state == 'active') {
-          idleCount = 0;
           showNextQuestion();
         } else {
           console.log('Question suppressed as PC is ' + state);
-          idleCount++;
-          if (idleCount > 3 && sessionOpen) {
-            console.log('Closing session after long period of inactivity...');
-            closeSession();
-          }
         }
       });
     });

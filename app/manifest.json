@@ -20,8 +20,7 @@
       "scripts/ankiConnect.js",
       "scripts/notification.js",
       "scripts/iconMenu.js",
-      "scripts/install_update.js",
-      "scripts/textversion.js"
+      "scripts/install_update.js"
     ],
     "persistent": true
   },
