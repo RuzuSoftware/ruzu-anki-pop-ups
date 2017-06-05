@@ -54,11 +54,12 @@ function restore_options() {
     connectToAnki(function(success) {
       if (!success) {
         showMessage('Error connecting to Anki.');
+        setIconStatus('Error');
         $('#connection_error').show();
       } else {
-        //showMessage('Connected to Anki.');
+        setIconStatus('On');
         $('#connection_error').hide();
-        if (items.enabled && items.courseID != 0) {
+        if (items.enabled) {
           $('#showNextQuestion').prop('disabled', false);
         } else {
           $('#showNextQuestion').prop('disabled', true);
@@ -85,6 +86,13 @@ function showMessage(msg) {
 function showNextQuestion() {
   chrome.runtime.sendMessage({
     id: 'showNextQuestion'
+  });
+}
+
+function setIconStatus(status) {
+  chrome.runtime.sendMessage({
+    id: 'setIconStatus',
+    value: status
   });
 }
 

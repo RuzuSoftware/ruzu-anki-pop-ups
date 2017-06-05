@@ -138,7 +138,7 @@ function showAns(notifId) {
             }];
             var stages = 2;
           } else {
-            //Some error
+            //Some error TODO
           }
 
           var options = {
@@ -181,14 +181,19 @@ function showAns(notifId) {
 function answerQuestion(validNot, btnIdx) {
   getNextCard(function(thisCard) {
     if (thisCard.success == 'true' && thisCard.id == validNot.card_id) {
+      // Only 3 & 4 button notifications have validNot.stages == 2
       if (validNot.stage == 1 && validNot.stages == 2) {
         var update_notification = true;
         if (validNot.answerButtons.length == 3) {
+          // 3 button notification update / send answer logic
           if (btnIdx == 0) {
+            //First button is a single item so can be sent directly
             chrome.notifications.clear(validNot.notID);
             console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
+            sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
             update_notification = false;
           } else {
+            //Second button requires update before being sent
             var options = {
               buttons: [{
                 title: thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1],
@@ -198,6 +203,7 @@ function answerQuestion(validNot, btnIdx) {
             };
           }
         } else {
+          // 4 button notification update logic
           if (btnIdx == 0) {
             var options = {
               buttons: [{
@@ -219,7 +225,6 @@ function answerQuestion(validNot, btnIdx) {
 
         if (update_notification) {
           chrome.notifications.update(validNot.notID, options);
-
           //Mark notification as stage 2
           not_list.map(function(not) {
             if (not.notID == validNot.notID) {
@@ -229,57 +234,70 @@ function answerQuestion(validNot, btnIdx) {
           });
         }
       } else {
+        //Logic for 1 / 2 answer cards & already updated 3 / 4 answer cards
         chrome.notifications.clear(validNot.notID);
-        if (validNot.stages == 2 && validNot.first_ans != 0) {
-          if (btnIdx == 0) {
-            console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
+
+        if (validNot.stages == 2) {
+          // 3 / 4 answer card logic
+          if (validNot.answerButtons.length == 3) {
+            if (validNot.first_ans != 0) {
+              if (btnIdx == 0) {
+                console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
+              } else {
+                console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[2][0]);
+              }
+            } else {
+              /*
+               * This code should never be called as validNot.first_ans
+               * should always be '1' for 3 answer cards
+               */
+              console.log('Error: answer should have already been sent...');
+              errorNotifiction('internal_error');
+            }
           } else {
-            console.log('Send answer - ' + thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1]);
+            if (validNot.first_ans == 0) {
+              if (btnIdx == 0) {
+                console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
+              } else {
+                console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
+              }
+            } else {
+              if (btnIdx == 0) {
+                console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[2][0]);
+              } else {
+                console.log('Send answer - ' + thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1]);
+                sendAnswer(thisCard.id, thisCard.answerButtons[3][0]);
+              }
+            }
           }
         } else {
+          // 1 / 2 answer card logic
           if (btnIdx == 0) {
             console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
+            sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
           } else {
             console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
+            sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
           }
         }
       }
     } else {
       console.log('Card on notification has expired...');
       console.log(thisCard.id + ' != ' + validNot.card_id);
+      popUpTest();
     }
   });
 }
 
-/*
- * Revert a buttion at stage 2 to stage 1 to
- * show all 4 options again as it did initially
- */
-function revertQuestion(notifId, qnum_id) {
-
-  var answer1 = questions[qnum_id].choice1;
-  var answer2 = questions[qnum_id].choice2;
-  var answer3 = questions[qnum_id].choice3;
-  var answer4 = questions[qnum_id].choice4;
-
-  var options = {
-    message: '',
-    buttons: [{
-      title: answer1 + ' ' + spacer + ' ' + answer2,
-    }, {
-      title: answer3 + ' ' + spacer + ' ' + answer4,
-    }]
-  };
-
-  chrome.notifications.update(notifId, options);
-
-  //Mark notification as stage 1
-  not_list.map(function(not) {
-    if (not.notID == notifId) {
-      not.stage = 1;
-    }
+function sendAnswer(card_id, ans_ease) {
+  answerCard(card_id, ans_ease, function(ansResp) {
+    console.log(ansResp);
   });
-
 }
 
 
@@ -344,8 +362,19 @@ function errorNotifiction(error_type) {
         isClickable: true,
         requireInteraction: true,
         buttons: [{
-          title: 'Select another course',
+          title: 'Options',
         }]
+      };
+      break;
+    case 'internal_error':
+      var options = {
+        type: 'basic',
+        title: 'Error!',
+        message: 'Internal Error.',
+        contextMessage: 'Sorry, there was an internal issue.',
+        iconUrl: 'images/icon48.png',
+        isClickable: true,
+        requireInteraction: true
       };
       break;
     default:
@@ -521,9 +550,8 @@ chrome.notifications.onClicked.addListener(function(notifId) {
       //Do not clear valid questions on click
       showAns(notifId);
     } else if (validNot && validNot.stage == 2) {
-      //TODO
       //Revert stage 2 questions
-      //revertQuestion(notifId, validNot.qnum_id);
+      showAns(notifId); //This will re-display original buttons...
     } else {
       chrome.notifications.clear(notifId);
     }
@@ -574,6 +602,9 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
       console.log('Reset Alarm...');
       checkAlarm(alarmName, initialSetUp);
       break;
+    } else {
+      //Update badge on save
+      setIconStatus('On');
     }
   }
 });
@@ -586,6 +617,8 @@ chrome.runtime.onMessage.addListener(function(request) {
     checkAlarm(alarmName, initialSetUp);
   } else if (request && (request.id == 'showNextQuestion')) {
     showNextQuestion();
+  } else if (request && (request.id == 'setIconStatus')) {
+    setIconStatus(request.value);
   }
 });
 

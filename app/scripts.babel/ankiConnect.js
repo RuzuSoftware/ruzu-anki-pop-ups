@@ -83,3 +83,22 @@ function showAnswer(callback) {
     }
   });
 }
+
+function answerCard(card_id, ans_ease, callback) {
+  ankiInvoke('answerCard', {
+    id: card_id,
+    ease: ans_ease
+  }).then(response => {
+    if (callback) {
+      callback(JSON.parse(response));
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: 'false',
+        message: error
+      });
+    }
+  });
+}
