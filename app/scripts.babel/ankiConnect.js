@@ -20,10 +20,13 @@ function ankiInvoke(action, params = {}) {
   });
 }
 
-function checkState(callback) {
-  ankiInvoke('checkState').then(response => {
+function checkVersion(callback) {
+  ankiInvoke('version').then(response => {
     if (callback) {
-      callback(JSON.parse(response));
+      callback({
+        success: 'true',
+        version: response
+      });
     }
   }).catch(error => {
     console.log(`Error: ${error}`);

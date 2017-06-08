@@ -7,7 +7,6 @@ var qnum = 0;
 var error_not;
 var globalCard;
 
-
 /*
  * Check if a notification is a valid Ruzu Anki pop-up question
  * Then pass the not_list value to the callback
@@ -28,77 +27,78 @@ function validNotID(notifId, callback) {
  */
 function popUpTest() {
 
-  checkState(function(currentState) {
-    console.log('window_state: ' + currentState.window_state);
-    console.log('review_state: ' + currentState.review_state);
+  checkVersion(function(versionResp) {
+    if (versionResp.version >= 4) {
 
-    //Pick up next card and show the question
-    console.log('Get next card...');
-    getNextCard(function(thisCard) {
-      if (thisCard.success == 'true') {
-        globalCard = thisCard; //For debug purposes only
-        console.log('Card collected, now show question...');
-        showQuestion(function(showQuestionResponse) {
-          if (showQuestionResponse.success == 'true') {
-            if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
-              var question = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
-            } else {
-              var question = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
-            }
-
-            var optionsType;
-            var optionsTitle;
-
-            if (true) {
-              optionsType = 'basic';
-              optionsTitle = question;
-            } else if (false /*TODO - Add support for images*/ ) {
-              optionsType = 'image';
-              optionsTitle = 'Image';
-            }
-
-            //Prep notification details
-            var options = {
-              type: optionsType,
-              title: optionsTitle,
-              message: '',
-              contextMessage: 'Click to show answer...',
-              iconUrl: 'images/icon48.png',
-              requireInteraction: true
-            };
-            //Must be done after the above
-            if (optionsType == 'image') {
-              options.imageUrl = question;
-            }
-
-            //Create notifications and add to array for tracking
-            chrome.notifications.create('', options, function(id) {
-              //Add notification to array
-              not_list.push({
-                notID: id,
-                stage: 1
-              });
-
-              if (not_list.length > 1 /*TODO CONFIG VAR*/ ) {
-                var removeNotID = not_list.shift().notID;
-                //Clear overflow notification
-                chrome.notifications.clear(removeNotID);
+      //Pick up next card and show the question
+      console.log('Get next card...');
+      getNextCard(function(thisCard) {
+        if (thisCard.success == 'true') {
+          globalCard = thisCard; //For debug purposes only
+          console.log('Card collected, now show question...');
+          showQuestion(function(showQuestionResponse) {
+            if (showQuestionResponse.success == 'true') {
+              if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
+                var question = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
+              } else {
+                var question = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
               }
-            });
-          } else {
-            console.log('Issue showing question...');
-            console.log(showQuestionResponse);
-          }
-        });
-      } else {
-        console.log('Issue getting the next card...');
-        console.log(thisCard);
-        errorNotifiction();
-      }
-    });
+
+              var optionsType;
+              var optionsTitle;
+
+              if (true) {
+                optionsType = 'basic';
+                optionsTitle = question;
+              } else if (false /*TODO - Add support for images*/ ) {
+                optionsType = 'image';
+                optionsTitle = 'Image';
+              }
+
+              //Prep notification details
+              var options = {
+                type: optionsType,
+                title: optionsTitle,
+                message: '',
+                contextMessage: 'Click to show answer...',
+                iconUrl: 'images/icon48.png',
+                requireInteraction: true
+              };
+              //Must be done after the above
+              if (optionsType == 'image') {
+                options.imageUrl = question;
+              }
+
+              //Create notifications and add to array for tracking
+              chrome.notifications.create('', options, function(id) {
+                //Add notification to array
+                not_list.push({
+                  notID: id,
+                  stage: 1
+                });
+
+                if (not_list.length > 1 /*TODO CONFIG VAR*/ ) {
+                  var removeNotID = not_list.shift().notID;
+                  //Clear overflow notification
+                  chrome.notifications.clear(removeNotID);
+                }
+              });
+            } else {
+              console.log('Issue showing question...');
+              console.log(showQuestionResponse);
+            }
+          });
+        } else {
+          console.log('Issue getting the next card...');
+          console.log(thisCard);
+          errorNotifiction();
+        }
+      });
+    } else {
+      errorNotifiction('version_error')
+    }
   });
 }
-
 
 function showAns(notifId) {
   getNextCard(function(thisCard) {
@@ -296,7 +296,9 @@ function answerQuestion(validNot, btnIdx) {
 
 function sendAnswer(card_id, ans_ease) {
   answerCard(card_id, ans_ease, function(ansResp) {
-    console.log(ansResp);
+    if (ansResp.success != 'true') {
+      errorNotifiction('sendAnswerFail');
+    }
   });
 }
 
@@ -338,6 +340,16 @@ function errorNotifiction(error_type) {
   setIconStatus('Error');
   var iconUrl = 'images/error_temp.png';
   switch (error_type) {
+    case 'version_error':
+      var options = {
+        type: 'basic',
+        title: 'Error!',
+        message: 'Please download the latest version of AnkiConnect.',
+        iconUrl: iconUrl,
+        isClickable: true,
+        requireInteraction: true
+      };
+      break;
     case 'connection_issue':
       var options = {
         type: 'basic',
@@ -366,13 +378,23 @@ function errorNotifiction(error_type) {
         }]
       };
       break;
+    case 'sendAnswerFail':
+      var options = {
+        type: 'basic',
+        title: 'Error!',
+        message: 'There was an issue trying to answer this card.',
+        iconUrl: iconUrl,
+        isClickable: true,
+        requireInteraction: true
+      };
+      break;
     case 'internal_error':
       var options = {
         type: 'basic',
         title: 'Error!',
         message: 'Internal Error.',
-        contextMessage: 'Sorry, there was an internal issue.',
-        iconUrl: 'images/icon48.png',
+        contextMessage: 'Sorry, there was an internal error.',
+        iconUrl: iconUrl,
         isClickable: true,
         requireInteraction: true
       };
@@ -545,7 +567,9 @@ chrome.notifications.onButtonClicked.addListener(function(notifId, btnIdx) {
 chrome.notifications.onClicked.addListener(function(notifId) {
   validNotID(notifId, function(validNot) {
     if (notifId == error_not) {
+      chrome.notifications.clear(notifId);
       checkAlarm(alarmName, initialSetUp);
+      popUpTest();
     } else if (validNot && validNot.stage == 1) {
       //Do not clear valid questions on click
       showAns(notifId);
@@ -622,4 +646,13 @@ chrome.runtime.onMessage.addListener(function(request) {
   }
 });
 
+
+//Initialisation code
 checkAlarm(alarmName, initialSetUp);
+checkVersion(function(versionResp) {
+  if (versionResp.success != 'true') {
+    errorNotifiction();
+  } else if (versionResp.version < 4) {
+    errorNotifiction('version_error');
+  }
+});
