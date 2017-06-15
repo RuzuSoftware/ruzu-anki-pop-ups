@@ -33,11 +33,11 @@ function popUpTest() {
       //Pick up next card and show the question
       console.log('Get next card...');
       getNextCard(function(thisCard) {
-        if (thisCard.success == 'true') {
+        if (thisCard.success) {
           globalCard = thisCard; //For debug purposes only
           console.log('Card collected, now show question...');
           showQuestion(function(showQuestionResponse) {
-            if (showQuestionResponse.success == 'true') {
+            if (showQuestionResponse.success) {
               if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
                 var question = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
               } else {
@@ -102,9 +102,9 @@ function popUpTest() {
 
 function showAns(notifId) {
   getNextCard(function(thisCard) {
-    if (thisCard.success == 'true' && thisCard.id == globalCard.id) {
+    if (thisCard.success && thisCard.id == globalCard.id) {
       showAnswer(function(showAnswerResponse) {
-        if (showAnswerResponse.success == 'true') {
+        if (showAnswerResponse.success) {
           if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
             var answer = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
           } else {
@@ -180,7 +180,7 @@ function showAns(notifId) {
  */
 function answerQuestion(validNot, btnIdx) {
   getNextCard(function(thisCard) {
-    if (thisCard.success == 'true' && thisCard.id == validNot.card_id) {
+    if (thisCard.success && thisCard.id == validNot.card_id) {
       // Only 3 & 4 button notifications have validNot.stages == 2
       if (validNot.stage == 1 && validNot.stages == 2) {
         var update_notification = true;
@@ -296,7 +296,7 @@ function answerQuestion(validNot, btnIdx) {
 
 function sendAnswer(card_id, ans_ease) {
   answerCard(card_id, ans_ease, function(ansResp) {
-    if (ansResp.success != 'true') {
+    if (!ansResp.success) {
       errorNotifiction('sendAnswerFail');
     }
   });
@@ -650,7 +650,7 @@ chrome.runtime.onMessage.addListener(function(request) {
 //Initialisation code
 checkAlarm(alarmName, initialSetUp);
 checkVersion(function(versionResp) {
-  if (versionResp.success != 'true') {
+  if (!versionResp.success) {
     errorNotifiction();
   } else if (versionResp.version < 4) {
     errorNotifiction('version_error');

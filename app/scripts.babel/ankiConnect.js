@@ -24,7 +24,7 @@ function checkVersion(callback) {
   ankiInvoke('version').then(response => {
     if (callback) {
       callback({
-        success: 'true',
+        success: true,
         version: response
       });
     }
@@ -32,7 +32,7 @@ function checkVersion(callback) {
     console.log(`Error: ${error}`);
     if (callback) {
       callback({
-        success: 'false',
+        success: false,
         message: error
       });
     }
@@ -48,7 +48,7 @@ function getNextCard(callback) {
     console.log(`Error: ${error}`);
     if (callback) {
       callback({
-        success: 'false',
+        success: false,
         message: error
       });
     }
@@ -64,7 +64,7 @@ function showQuestion(callback) {
     console.log(`Error: ${error}`);
     if (callback) {
       callback({
-        success: 'false',
+        success: false,
         message: error
       });
     }
@@ -80,7 +80,7 @@ function showAnswer(callback) {
     console.log(`Error: ${error}`);
     if (callback) {
       callback({
-        success: 'false',
+        success: false,
         message: error
       });
     }
@@ -99,7 +99,7 @@ function answerCard(card_id, ans_ease, callback) {
     console.log(`Error: ${error}`);
     if (callback) {
       callback({
-        success: 'false',
+        success: false,
         message: error
       });
     }

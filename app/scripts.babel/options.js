@@ -26,14 +26,14 @@ function connectToAnki(callback) {
       if (xhr.responseText) {
         if (callback) {
           callback({
-            success: 'true',
+            success: true,
             version: xhr.responseText
           });
         }
       } else {
         if (callback) {
           callback({
-            success: 'false',
+            success: false,
             version: 0
           });
         }
@@ -56,8 +56,8 @@ function restore_options() {
   }, function(items) {
 
     connectToAnki(function(connectResp) {
-      if (connectResp.success != 'true' || connectResp.version < 4) {
-        if (connectResp.success != 'true') {
+      if (!connectResp.success || connectResp.version < 4) {
+        if (!connectResp.success) {
           showMessage('Error connecting to Anki.');
         } else {
           showMessage('Please download the latest version of AnkiConnect and try again.');
