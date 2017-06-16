@@ -40,9 +40,9 @@ function checkVersion(callback) {
 }
 
 function getNextCard(callback) {
-  ankiInvoke('getNextCard').then(response => {
+  ankiInvoke('guiGetNextCard').then(response => {
     if (callback) {
-      callback(JSON.parse(response));
+      callback(response);
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -56,9 +56,9 @@ function getNextCard(callback) {
 }
 
 function showQuestion(callback) {
-  ankiInvoke('showQuestion').then(response => {
+  ankiInvoke('guiShowQuestion').then(response => {
     if (callback) {
-      callback(JSON.parse(response));
+      callback(response);
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -72,9 +72,9 @@ function showQuestion(callback) {
 }
 
 function showAnswer(callback) {
-  ankiInvoke('showAnswer').then(response => {
+  ankiInvoke('guiShowAnswer').then(response => {
     if (callback) {
-      callback(JSON.parse(response));
+      callback(response);
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -88,12 +88,12 @@ function showAnswer(callback) {
 }
 
 function answerCard(card_id, ans_ease, callback) {
-  ankiInvoke('answerCard', {
+  ankiInvoke('guiAnswerCard', {
     id: card_id,
     ease: ans_ease
   }).then(response => {
     if (callback) {
-      callback(JSON.parse(response));
+      callback(response);
     }
   }).catch(error => {
     console.log(`Error: ${error}`);

@@ -28,8 +28,7 @@ function validNotID(notifId, callback) {
 function popUpTest() {
 
   checkVersion(function(versionResp) {
-    if (versionResp.version >= 4) {
-
+    if (versionResp.success && versionResp.version >= 4) {
       //Pick up next card and show the question
       console.log('Get next card...');
       getNextCard(function(thisCard) {
@@ -38,10 +37,10 @@ function popUpTest() {
           console.log('Card collected, now show question...');
           showQuestion(function(showQuestionResponse) {
             if (showQuestionResponse.success) {
-              if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
-                var question = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
+              if (thisCard.ord == thisCard.fieldMap['Front'][1].ord) {
+                var question = thisCard.fields[thisCard.fieldMap['Front'][0]];
               } else {
-                var question = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
+                var question = thisCard.fields[thisCard.fieldMap['Back'][0]];
               }
 
               var optionsType;
@@ -86,6 +85,7 @@ function popUpTest() {
             } else {
               console.log('Issue showing question...');
               console.log(showQuestionResponse);
+              errorNotifiction('internal_error');
             }
           });
         } else {
@@ -94,8 +94,10 @@ function popUpTest() {
           errorNotifiction();
         }
       });
+    } else if (versionResp.success && versionResp.version < 4) {
+      errorNotifiction('version_error');
     } else {
-      errorNotifiction('version_error')
+      errorNotifiction();
     }
   });
 }
@@ -105,10 +107,10 @@ function showAns(notifId) {
     if (thisCard.success && thisCard.id == globalCard.id) {
       showAnswer(function(showAnswerResponse) {
         if (showAnswerResponse.success) {
-          if (thisCard.ord == thisCard._fmap['Front'][1].ord) {
-            var answer = JSON.parse(thisCard.fields)[thisCard._fmap['Back'][0]];
+          if (thisCard.ord == thisCard.fieldMap['Front'][1].ord) {
+            var answer = thisCard.fields[thisCard.fieldMap['Back'][0]];
           } else {
-            var answer = JSON.parse(thisCard.fields)[thisCard._fmap['Front'][0]];
+            var answer = thisCard.fields[thisCard.fieldMap['Front'][0]];
           }
 
           if (thisCard.answerButtons.length == 1) {
@@ -652,7 +654,7 @@ checkAlarm(alarmName, initialSetUp);
 checkVersion(function(versionResp) {
   if (!versionResp.success) {
     errorNotifiction();
-  } else if (versionResp.version < 4) {
+  } else if (versionResp.success && versionResp.version < 4) {
     errorNotifiction('version_error');
   }
 });
