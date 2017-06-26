@@ -37,7 +37,7 @@ function popUpTest() {
           console.log('Card collected, now show question...');
           showQuestion(function(showQuestionResponse) {
             if (showQuestionResponse.success) {
-              if (thisCard.ord == thisCard.fieldMap['Front'][1].ord) {
+              if (thisCard.fieldOrder == thisCard.fieldMap['Front'][1].ord) {
                 var question = thisCard.fields[thisCard.fieldMap['Front'][0]];
               } else {
                 var question = thisCard.fields[thisCard.fieldMap['Back'][0]];
@@ -107,7 +107,7 @@ function showAns(notifId) {
     if (thisCard.success && thisCard.id == globalCard.id) {
       showAnswer(function(showAnswerResponse) {
         if (showAnswerResponse.success) {
-          if (thisCard.ord == thisCard.fieldMap['Front'][1].ord) {
+          if (thisCard.fieldOrder == thisCard.fieldMap['Front'][1].ord) {
             var answer = thisCard.fields[thisCard.fieldMap['Back'][0]];
           } else {
             var answer = thisCard.fields[thisCard.fieldMap['Front'][0]];
