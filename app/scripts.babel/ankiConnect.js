@@ -58,7 +58,13 @@ function getNextCard(callback) {
 function showQuestion(callback) {
   ankiInvoke('guiShowQuestion').then(response => {
     if (callback) {
-      callback(response);
+      if (response == true) {
+        callback({
+          success: response
+        });
+      } else {
+        callback(response);
+      }
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -74,7 +80,13 @@ function showQuestion(callback) {
 function showAnswer(callback) {
   ankiInvoke('guiShowAnswer').then(response => {
     if (callback) {
-      callback(response);
+      if (response == true) {
+        callback({
+          success: response
+        });
+      } else {
+        callback(response);
+      }
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -92,8 +104,15 @@ function answerCard(card_id, ans_ease, callback) {
     id: card_id,
     ease: ans_ease
   }).then(response => {
-    if (callback) {
-      callback(response);
+    if (response == true) {
+      callback({
+        success: response
+      });
+    } else {
+      callback({
+        success: false,
+        message: response
+      });
     }
   }).catch(error => {
     console.log(`Error: ${error}`);

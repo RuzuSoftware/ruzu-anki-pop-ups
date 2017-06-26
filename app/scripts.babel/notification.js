@@ -76,7 +76,7 @@ function popUpTest() {
                   stage: 1
                 });
 
-                if (not_list.length > 1 /*TODO CONFIG VAR*/ ) {
+                if (not_list.length > 1) {
                   var removeNotID = not_list.shift().notID;
                   //Clear overflow notification
                   chrome.notifications.clear(removeNotID);
@@ -91,7 +91,7 @@ function popUpTest() {
         } else {
           console.log('Issue getting the next card...');
           console.log(thisCard);
-          errorNotifiction();
+          errorNotifiction('no_results');
         }
       });
     } else if (versionResp.success && versionResp.version < 4) {
@@ -140,7 +140,8 @@ function showAns(notifId) {
             }];
             var stages = 2;
           } else {
-            //Some error TODO
+            console.log('Cards with more than 4 possible answers are not supported...');
+            errorNotifiction('internal_error');
           }
 
           var options = {
@@ -171,7 +172,7 @@ function showAns(notifId) {
         popUpTest();
       } else {
         console.log('There was an error showing the answer...');
-        errorNotifiction();
+        errorNotifiction('no_results');
       }
     }
   });
@@ -289,9 +290,14 @@ function answerQuestion(validNot, btnIdx) {
         }
       }
     } else {
-      console.log('Card on notification has expired...');
-      console.log(thisCard.id + ' != ' + validNot.card_id);
-      popUpTest();
+      if (thisCard.id != validNot.card_id) {
+        console.log('Card on notification has expired...');
+        console.log(thisCard.id + ' != ' + validNot.card_id);
+        popUpTest();
+      } else {
+        console.log('There was an issue answering this card...');
+        errorNotifiction('no_results');
+      }
     }
   });
 }
@@ -299,6 +305,7 @@ function answerQuestion(validNot, btnIdx) {
 function sendAnswer(card_id, ans_ease) {
   answerCard(card_id, ans_ease, function(ansResp) {
     if (!ansResp.success) {
+      console.log(ansResp);
       errorNotifiction('sendAnswerFail');
     }
   });
@@ -370,8 +377,8 @@ function errorNotifiction(error_type) {
       var options = {
         type: 'basic',
         title: 'Attention!',
-        message: 'No questions to review.',
-        contextMessage: 'Select other course or wait until later.',
+        message: 'There are no cards left to review.',
+        contextMessage: 'Select another deck or increase daily limit.',
         iconUrl: 'images/icon48.png',
         isClickable: true,
         requireInteraction: true,
@@ -651,10 +658,16 @@ chrome.runtime.onMessage.addListener(function(request) {
 
 //Initialisation code
 checkAlarm(alarmName, initialSetUp);
-checkVersion(function(versionResp) {
-  if (!versionResp.success) {
-    errorNotifiction();
-  } else if (versionResp.success && versionResp.version < 4) {
-    errorNotifiction('version_error');
+chrome.storage.sync.get({
+  enabled: defaultEnabled,
+}, function(settings) {
+  if (settings.enabled) {
+    checkVersion(function(versionResp) {
+      if (!versionResp.success) {
+        errorNotifiction();
+      } else if (versionResp.success && versionResp.version < 4) {
+        errorNotifiction('version_error');
+      }
+    });
   }
 });
