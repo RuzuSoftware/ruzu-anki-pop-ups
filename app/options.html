@@ -14,8 +14,12 @@
 </head>
 
 <body>
+        <legend>Settings</legend>
   <div class="form-group">
-    <legend>Settings</legend>
+    <div id="deck_wrap">
+      <label for="deck">Deck</label>
+      <select class="form-control" id="deck" disabled="true"></select>
+    </div>
     <div id="connection_error" style="display: none;">
       <p>Error connecting to Anki.</p>
       <p>Please ensure that Anki is running and try again.</p>
@@ -64,6 +68,7 @@
 
   <!-- build:js scripts/options.js -->
   <script src="scripts/config.js"></script>
+  <script src="scripts/ankiConnect.js"></script>
   <script src="scripts/options.js"></script>
   <!-- endbuild -->
 </body>

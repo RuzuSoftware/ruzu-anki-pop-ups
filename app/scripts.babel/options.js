@@ -2,10 +2,12 @@
 
 // Saves options to chrome.storage.sync.
 function save_options() {
+  var deckNameVal = document.getElementById('deck').value;
   var frequencyVal = document.getElementById('frequency').value;
   var enabledVal = document.getElementById('enabled').checked;
   var syncVal = document.getElementById('sync').checked;
   chrome.storage.sync.set({
+    deckName: deckNameVal,
     frequency: frequencyVal,
     enabled: enabledVal,
     sync: syncVal
@@ -22,14 +24,23 @@ function connectToAnki(callback) {
   xhr.open('POST', 'http://localhost:8765', true);
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4 && xhr.status == 200) {
-      console.log(xhr.responseText);
       if (xhr.responseText) {
-        if (callback) {
-          callback({
-            success: true,
-            version: xhr.responseText
-          });
-        }
+        deckNames(function(resp) {
+          // Populate list of decks.
+          var deckSelect = $('#deck');
+          deckSelect.empty();
+          for (var i = 0; i < resp.deckNames.length; i++) {
+            deckSelect.append(
+              $('<option></option>').val(resp.deckNames[i]).html(resp.deckNames[i])
+            );
+          }
+          if (callback) {
+            callback({
+              success: true,
+              version: xhr.responseText
+            });
+          }
+        });
       } else {
         if (callback) {
           callback({
@@ -50,13 +61,14 @@ function connectToAnki(callback) {
 function restore_options() {
   // Use default values if not set
   chrome.storage.sync.get({
+    deckName: defaultDeckName,
     frequency: defaultFrequency,
     enabled: defaultEnabled,
     sync: defaultSync
   }, function(items) {
 
     connectToAnki(function(connectResp) {
-      if (!connectResp.success || connectResp.version < 4) {
+      if (!connectResp.success || connectResp.version < requiredVersion) {
         if (!connectResp.success) {
           showMessage('Error connecting to Anki.');
         } else {
@@ -65,15 +77,17 @@ function restore_options() {
         setIconStatus('Error');
         $('#connection_error').show();
       } else {
-        setIconStatus('On');
         $('#connection_error').hide();
+        $('#deck').prop('disabled', false);
         if (items.enabled) {
+          setIconStatus('On');
           $('#showNextQuestion').prop('disabled', false);
         } else {
+          setIconStatus('Off');
           $('#showNextQuestion').prop('disabled', true);
         }
       }
-
+      document.getElementById('deck').value = items.deckName;
       document.getElementById('frequency').value = items.frequency;
       document.getElementById('enabled').checked = items.enabled;
       document.getElementById('sync').checked = items.sync;

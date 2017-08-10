@@ -39,10 +39,81 @@ function checkVersion(callback) {
   });
 }
 
-function getNextCard(callback) {
-  ankiInvoke('guiGetNextCard').then(response => {
+function deckNames(callback) {
+  ankiInvoke('deckNames').then(response => {
     if (callback) {
-      callback(response);
+      callback({
+        success: true,
+        deckNames: response
+      });
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
+function deckReview(deckName, callback) {
+  ankiInvoke('guiDeckReview', {
+    name: deckName,
+  }).then(response => {
+    if (response == true) {
+      callback({
+        success: response
+      });
+    } else {
+      callback({
+        success: false,
+        message: response
+      });
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
+function getNextCard(callback) {
+  ankiInvoke('guiCurrentCard').then(response => {
+    if (response) {
+      var buttonLength = response.buttons.length;
+      response['answerButtons'] = response.buttons.map(function(idx) {
+        var label;
+        switch (idx) {
+          case 1:
+            label = 'Again';
+            break;
+          case 2:
+            label = (buttonLength == 4 ? 'Hard' : 'Good');
+            break;
+          case 3:
+            label = (buttonLength == 4 ? 'Good' : 'Easy');
+            break;
+          case 4:
+            label = 'Easy';
+            break;
+          default:
+            label = 'Other';
+        }
+        return [idx, label];
+      });
+      if (callback) {
+        callback(response);
+      }
+    } else {
+      if (callback) {
+        callback(response);
+      }
     }
   }).catch(error => {
     console.log(`Error: ${error}`);
@@ -99,21 +170,13 @@ function showAnswer(callback) {
   });
 }
 
-function answerCard(card_id, ans_ease, callback) {
+function answerCard(ans_ease, callback) {
   ankiInvoke('guiAnswerCard', {
-    id: card_id,
     ease: ans_ease
   }).then(response => {
-    if (response == true) {
-      callback({
-        success: response
-      });
-    } else {
-      callback({
-        success: false,
-        message: response
-      });
-    }
+    callback({
+      success: response
+    });
   }).catch(error => {
     console.log(`Error: ${error}`);
     if (callback) {

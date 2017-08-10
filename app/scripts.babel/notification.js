@@ -6,6 +6,7 @@ var not_list = [];
 var qnum = 0;
 var error_not;
 var globalCard;
+var currentDeck;
 
 /*
  * Check if a notification is a valid Ruzu Anki pop-up question
@@ -25,22 +26,22 @@ function validNotID(notifId, callback) {
 /*
  * Collect the next question and display a pop-up
  */
-function popUpTest() {
+function popUpTest(retry = true) {
 
   checkVersion(function(versionResp) {
-    if (versionResp.success && versionResp.version >= 4) {
+    if (versionResp.success && versionResp.version >= requiredVersion) {
       //Pick up next card and show the question
       console.log('Get next card...');
       getNextCard(function(thisCard) {
-        if (thisCard.success) {
+        if (thisCard && thisCard.deckName == currentDeck) {
           globalCard = thisCard; //For debug purposes only
           console.log('Card collected, now show question...');
           showQuestion(function(showQuestionResponse) {
             if (showQuestionResponse.success) {
-              if (thisCard.fieldOrder == thisCard.fieldMap['Front'][1].ord) {
-                var question = thisCard.fields[thisCard.fieldMap['Front'][0]];
+              if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
+                var question = thisCard.fields['Front'].value;
               } else {
-                var question = thisCard.fields[thisCard.fieldMap['Back'][0]];
+                var question = thisCard.fields['Back'].value;
               }
 
               var optionsType;
@@ -68,6 +69,10 @@ function popUpTest() {
                 options.imageUrl = question;
               }
 
+              if (error_not) {
+                chrome.notifications.clear(error_not);
+              }
+
               //Create notifications and add to array for tracking
               chrome.notifications.create('', options, function(id) {
                 //Add notification to array
@@ -90,11 +95,26 @@ function popUpTest() {
           });
         } else {
           console.log('Issue getting the next card...');
-          console.log(thisCard);
-          errorNotifiction('no_results');
+          if (retry) {
+            console.log('Attepting to start deck review and run again.');
+            chrome.storage.sync.get({
+              deckName: defaultDeckName
+            }, function(settings) {
+              deckReview(settings.deckName, function(deckReviewResp) {
+                if (deckReviewResp) {
+                  currentDeck = settings.deckName;
+                  popUpTest(false);
+                } else {
+                  errorNotifiction('internal_error'); //Cannot load deck
+                };
+              });
+            });
+          } else {
+            errorNotifiction('no_results');
+          }
         }
       });
-    } else if (versionResp.success && versionResp.version < 4) {
+    } else if (versionResp.success && versionResp.version < requiredVersion) {
       errorNotifiction('version_error');
     } else {
       errorNotifiction();
@@ -104,13 +124,13 @@ function popUpTest() {
 
 function showAns(notifId) {
   getNextCard(function(thisCard) {
-    if (thisCard.success && thisCard.id == globalCard.id) {
+    if (thisCard && thisCard.id == globalCard.id && thisCard.deckName == currentDeck) {
       showAnswer(function(showAnswerResponse) {
         if (showAnswerResponse.success) {
-          if (thisCard.fieldOrder == thisCard.fieldMap['Front'][1].ord) {
-            var answer = thisCard.fields[thisCard.fieldMap['Back'][0]];
+          if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
+            var answer = thisCard.fields['Back'].value;
           } else {
-            var answer = thisCard.fields[thisCard.fieldMap['Front'][0]];
+            var answer = thisCard.fields['Front'].value;
           }
 
           if (thisCard.answerButtons.length == 1) {
@@ -167,12 +187,15 @@ function showAns(notifId) {
         }
       });
     } else {
-      if (thisCard.id != globalCard.id) {
+      if (thisCard.id != globalCard.id && thisCard.deckName == currentDeck) {
         console.log('Question expired, showing current question...');
+        popUpTest();
+      } else if (thisCard.deckName != currentDeck) {
+        console.log('Deck has been changed, ...');
         popUpTest();
       } else {
         console.log('There was an error showing the answer...');
-        errorNotifiction('no_results');
+        errorNotifiction(); //was 'no_results'
       }
     }
   });
@@ -183,7 +206,7 @@ function showAns(notifId) {
  */
 function answerQuestion(validNot, btnIdx) {
   getNextCard(function(thisCard) {
-    if (thisCard.success && thisCard.id == validNot.card_id) {
+    if (thisCard && thisCard.id == validNot.card_id) {
       // Only 3 & 4 button notifications have validNot.stages == 2
       if (validNot.stage == 1 && validNot.stages == 2) {
         var update_notification = true;
@@ -193,7 +216,7 @@ function answerQuestion(validNot, btnIdx) {
             //First button is a single item so can be sent directly
             chrome.notifications.clear(validNot.notID);
             console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
-            sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
+            sendAnswer(thisCard.answerButtons[0][0]);
             update_notification = false;
           } else {
             //Second button requires update before being sent
@@ -246,10 +269,10 @@ function answerQuestion(validNot, btnIdx) {
             if (validNot.first_ans != 0) {
               if (btnIdx == 0) {
                 console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
+                sendAnswer(thisCard.answerButtons[1][0]);
               } else {
                 console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[2][0]);
+                sendAnswer(thisCard.answerButtons[2][0]);
               }
             } else {
               /*
@@ -263,18 +286,18 @@ function answerQuestion(validNot, btnIdx) {
             if (validNot.first_ans == 0) {
               if (btnIdx == 0) {
                 console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
+                sendAnswer(thisCard.answerButtons[0][0]);
               } else {
                 console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
+                sendAnswer(thisCard.answerButtons[1][0]);
               }
             } else {
               if (btnIdx == 0) {
                 console.log('Send answer - ' + thisCard.answerButtons[2][0] + ': ' + thisCard.answerButtons[2][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[2][0]);
+                sendAnswer(thisCard.answerButtons[2][0]);
               } else {
                 console.log('Send answer - ' + thisCard.answerButtons[3][0] + ': ' + thisCard.answerButtons[3][1]);
-                sendAnswer(thisCard.id, thisCard.answerButtons[3][0]);
+                sendAnswer(thisCard.answerButtons[3][0]);
               }
             }
           }
@@ -282,10 +305,10 @@ function answerQuestion(validNot, btnIdx) {
           // 1 / 2 answer card logic
           if (btnIdx == 0) {
             console.log('Send answer - ' + thisCard.answerButtons[0][0] + ': ' + thisCard.answerButtons[0][1]);
-            sendAnswer(thisCard.id, thisCard.answerButtons[0][0]);
+            sendAnswer(thisCard.answerButtons[0][0]);
           } else {
             console.log('Send answer - ' + thisCard.answerButtons[1][0] + ': ' + thisCard.answerButtons[1][1]);
-            sendAnswer(thisCard.id, thisCard.answerButtons[1][0]);
+            sendAnswer(thisCard.answerButtons[1][0]);
           }
         }
       }
@@ -302,15 +325,14 @@ function answerQuestion(validNot, btnIdx) {
   });
 }
 
-function sendAnswer(card_id, ans_ease) {
-  answerCard(card_id, ans_ease, function(ansResp) {
+function sendAnswer(ans_ease) {
+  answerCard(ans_ease, function(ansResp) {
     if (!ansResp.success) {
       console.log(ansResp);
       errorNotifiction('sendAnswerFail');
     }
   });
 }
-
 
 function setIconStatus(status) {
 
@@ -458,9 +480,11 @@ function checkAlarm(alarmName, callback) {
       return a.name == alarmName;
     });
     chrome.storage.sync.get({
+      deckName: defaultDeckName,
       frequency: defaultFrequency,
       enabled: defaultEnabled,
     }, function(settings) {
+      currentDeck = settings.deckName;
       callback(settings.enabled, hasAlarm);
     });
   });
@@ -631,7 +655,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
     var storageChange = changes[key];
     // console.log('Storage key ' + key + ' in namespace ' + namespace + ' changed. ' +
     //   'Old value was ' + storageChange.oldValue + ', new value is ' + storageChange.newValue + '.');
-    if ((key == 'enabled' || key == 'frequency' || key == 'courseID') && storageChange.oldValue != storageChange.newValue) {
+    if ((key == 'enabled' || key == 'frequency' || key == 'deckName') && storageChange.oldValue != storageChange.newValue) {
       console.log('Reset Alarm...');
       checkAlarm(alarmName, initialSetUp);
       break;
@@ -665,7 +689,7 @@ chrome.storage.sync.get({
     checkVersion(function(versionResp) {
       if (!versionResp.success) {
         errorNotifiction();
-      } else if (versionResp.success && versionResp.version < 4) {
+      } else if (versionResp.success && versionResp.version < requiredVersion) {
         errorNotifiction('version_error');
       }
     });
