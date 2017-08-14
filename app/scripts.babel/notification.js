@@ -9,6 +9,26 @@ var globalCard;
 var currentDeck;
 
 /*
+ * Check if the correct version of anki-connect is installed
+ * and running
+ */
+function checkConnection() {
+  chrome.storage.sync.get({
+    enabled: defaultEnabled,
+  }, function(settings) {
+    if (settings.enabled) {
+      checkVersion(function(versionResp) {
+        if (!versionResp.success) {
+          errorNotifiction();
+        } else if (versionResp.success && versionResp.version < requiredVersion) {
+          errorNotifiction('version_error');
+        }
+      });
+    }
+  });
+}
+
+/*
  * Check if a notification is a valid Ruzu Anki pop-up question
  * Then pass the not_list value to the callback
  * Note that this does not consider error notifications as valid
@@ -73,6 +93,9 @@ function popUpTest(retry = true) {
                 chrome.notifications.clear(error_not);
               }
 
+              //Ensure icon status is correct)
+              setIconStatus('On');
+
               //Create notifications and add to array for tracking
               chrome.notifications.create('', options, function(id) {
                 //Add notification to array
@@ -124,7 +147,7 @@ function popUpTest(retry = true) {
 
 function showAns(notifId) {
   getNextCard(function(thisCard) {
-    if (thisCard && thisCard.id == globalCard.id && thisCard.deckName == currentDeck) {
+    if (thisCard && thisCard.cardId == globalCard.cardId && thisCard.deckName == currentDeck) {
       showAnswer(function(showAnswerResponse) {
         if (showAnswerResponse.success) {
           if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
@@ -176,7 +199,7 @@ function showAns(notifId) {
           not_list.map(function(not) {
             if (not.notID == notifId) {
               not.answerButtons = thisCard.answerButtons;
-              not.card_id = thisCard.id;
+              not.cardId = thisCard.cardId;
               not.stage = 1;
               not.stages = stages;
             }
@@ -187,7 +210,7 @@ function showAns(notifId) {
         }
       });
     } else {
-      if (thisCard.id != globalCard.id && thisCard.deckName == currentDeck) {
+      if (thisCard.cardId != globalCard.cardId && thisCard.deckName == currentDeck) {
         console.log('Question expired, showing current question...');
         popUpTest();
       } else if (thisCard.deckName != currentDeck) {
@@ -206,7 +229,7 @@ function showAns(notifId) {
  */
 function answerQuestion(validNot, btnIdx) {
   getNextCard(function(thisCard) {
-    if (thisCard && thisCard.id == validNot.card_id) {
+    if (thisCard && thisCard.cardId == validNot.cardId) {
       // Only 3 & 4 button notifications have validNot.stages == 2
       if (validNot.stage == 1 && validNot.stages == 2) {
         var update_notification = true;
@@ -313,9 +336,9 @@ function answerQuestion(validNot, btnIdx) {
         }
       }
     } else {
-      if (thisCard.id != validNot.card_id) {
+      if (thisCard.cardId != validNot.cardId) {
         console.log('Card on notification has expired...');
-        console.log(thisCard.id + ' != ' + validNot.card_id);
+        console.log(thisCard.cardId + ' != ' + validNot.cardId);
         popUpTest();
       } else {
         console.log('There was an issue answering this card...');
@@ -657,7 +680,11 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
     //   'Old value was ' + storageChange.oldValue + ', new value is ' + storageChange.newValue + '.');
     if ((key == 'enabled' || key == 'frequency' || key == 'deckName') && storageChange.oldValue != storageChange.newValue) {
       console.log('Reset Alarm...');
+      if (error_not) {
+        chrome.notifications.clear(error_not);
+      }
       checkAlarm(alarmName, initialSetUp);
+      checkConnection();
       break;
     } else {
       //Update badge on save
@@ -682,16 +709,4 @@ chrome.runtime.onMessage.addListener(function(request) {
 
 //Initialisation code
 checkAlarm(alarmName, initialSetUp);
-chrome.storage.sync.get({
-  enabled: defaultEnabled,
-}, function(settings) {
-  if (settings.enabled) {
-    checkVersion(function(versionResp) {
-      if (!versionResp.success) {
-        errorNotifiction();
-      } else if (versionResp.success && versionResp.version < requiredVersion) {
-        errorNotifiction('version_error');
-      }
-    });
-  }
-});
+checkConnection();
