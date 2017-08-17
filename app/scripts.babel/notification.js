@@ -58,56 +58,65 @@ function popUpTest(retry = true) {
           console.log('Card collected, now show question...');
           showQuestion(function(showQuestionResponse) {
             if (showQuestionResponse.success) {
-              if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
-                var question = thisCard.fields['Front'].value;
-              } else {
-                var question = thisCard.fields['Back'].value;
-              }
+              startCardTimer(function(startCardTimerResponse) {
+                if (startCardTimerResponse.success) {
 
-              var optionsType;
-              var optionsTitle;
+                  if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
+                    var question = thisCard.fields['Front'].value;
+                  } else {
+                    var question = thisCard.fields['Back'].value;
+                  }
 
-              if (true) {
-                optionsType = 'basic';
-                optionsTitle = question;
-              } else if (false /*TODO - Add support for images*/ ) {
-                optionsType = 'image';
-                optionsTitle = 'Image';
-              }
+                  var optionsType;
+                  var optionsTitle;
 
-              //Prep notification details
-              var options = {
-                type: optionsType,
-                title: optionsTitle,
-                message: '',
-                contextMessage: 'Click to show answer...',
-                iconUrl: 'images/icon48.png',
-                requireInteraction: true
-              };
-              //Must be done after the above
-              if (optionsType == 'image') {
-                options.imageUrl = question;
-              }
+                  if (true) {
+                    optionsType = 'basic';
+                    optionsTitle = question;
+                  } else if (false /*TODO - Add support for images*/ ) {
+                    optionsType = 'image';
+                    optionsTitle = 'Image';
+                  }
 
-              if (error_not) {
-                chrome.notifications.clear(error_not);
-              }
+                  //Prep notification details
+                  var options = {
+                    type: optionsType,
+                    title: optionsTitle,
+                    message: '',
+                    contextMessage: 'Click to show answer...',
+                    iconUrl: 'images/icon48.png',
+                    requireInteraction: true
+                  };
+                  //Must be done after the above
+                  if (optionsType == 'image') {
+                    options.imageUrl = question;
+                  }
 
-              //Ensure icon status is correct)
-              setIconStatus('On');
+                  if (error_not) {
+                    chrome.notifications.clear(error_not);
+                  }
 
-              //Create notifications and add to array for tracking
-              chrome.notifications.create('', options, function(id) {
-                //Add notification to array
-                not_list.push({
-                  notID: id,
-                  stage: 1
-                });
+                  //Ensure icon status is correct)
+                  setIconStatus('On');
 
-                if (not_list.length > 1) {
-                  var removeNotID = not_list.shift().notID;
-                  //Clear overflow notification
-                  chrome.notifications.clear(removeNotID);
+                  //Create notifications and add to array for tracking
+                  chrome.notifications.create('', options, function(id) {
+                    //Add notification to array
+                    not_list.push({
+                      notID: id,
+                      stage: 1
+                    });
+
+                    if (not_list.length > 1) {
+                      var removeNotID = not_list.shift().notID;
+                      //Clear overflow notification
+                      chrome.notifications.clear(removeNotID);
+                    }
+                  });
+                } else {
+                  console.log('Issue starting card timer...');
+                  console.log(startCardTimerResponse);
+                  errorNotifiction('internal_error');
                 }
               });
             } else {

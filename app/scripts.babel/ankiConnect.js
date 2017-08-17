@@ -126,6 +126,30 @@ function getNextCard(callback) {
   });
 }
 
+function startCardTimer(callback) {
+  ankiInvoke('guiStartCardTimer').then(response => {
+    if (callback) {
+      if (response) {
+        callback({
+          success: response
+        });
+      } else {
+        callback({
+          success: false
+        });
+      }
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
 function showQuestion(callback) {
   ankiInvoke('guiShowQuestion').then(response => {
     if (callback) {
