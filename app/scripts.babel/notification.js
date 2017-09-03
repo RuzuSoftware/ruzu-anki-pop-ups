@@ -401,7 +401,7 @@ function setIconStatus(status) {
 function errorNotifiction(error_type) {
   clearNotifications();
   setIconStatus('Error');
-  var iconUrl = 'images/error_temp.png';
+  var iconUrl = 'images/error.png';
   switch (error_type) {
     case 'version_error':
       var options = {
