@@ -1,6 +1,6 @@
 {
   "name": "__MSG_appName__",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "manifest_version": 2,
   "description": "__MSG_appDescription__",
   "icons": {
@@ -20,7 +20,8 @@
       "scripts/ankiConnect.js",
       "scripts/notification.js",
       "scripts/iconMenu.js",
-      "scripts/install_update.js"
+      "scripts/install_update.js",
+      "bower_components/underscore/underscore-min.js"
     ],
     "persistent": true
   },

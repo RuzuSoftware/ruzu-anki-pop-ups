@@ -8,6 +8,15 @@ var error_not;
 var globalCard;
 var currentDeck;
 
+function ruzuUnescape(string) {
+  console.log(string);
+  return _.unescape(string)
+    .replace(/&nbsp;/g, ' ')
+    .replace(/<div>/g, ' ')
+    .replace(/<\/div>/g, '')
+    .replace(/<br \/>/g, ' ');
+}
+
 /*
  * Check if the correct version of anki-connect is installed
  * and running
@@ -72,7 +81,7 @@ function popUpTest(retry = true) {
 
                   if (true) {
                     optionsType = 'basic';
-                    optionsTitle = question;
+                    optionsTitle = ruzuUnescape(question)
                   } else if (false /*TODO - Add support for images*/ ) {
                     optionsType = 'image';
                     optionsTitle = 'Image';
@@ -197,7 +206,7 @@ function showAns(notifId) {
           }
 
           var options = {
-            message: answer,
+            message: ruzuUnescape(answer),
             contextMessage: '',
             buttons: cardButtons
           };
