@@ -9,3 +9,4 @@ var defaultDeckName = 'Default';
 var defaultFrequency = 5;
 var defaultEnabled = false;
 var defaultSync = true;
+var defaultmodelSettings = {};

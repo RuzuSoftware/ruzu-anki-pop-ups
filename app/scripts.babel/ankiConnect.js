@@ -1,6 +1,6 @@
 'use strict';
 
-function ankiInvoke(action, params = {}) {
+function ankiInvoke(action, params = {}, version = null) {
   console.log(action + ' called...');
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -15,7 +15,8 @@ function ankiInvoke(action, params = {}) {
     xhr.open('POST', 'http://localhost:8765');
     xhr.send(JSON.stringify({
       action,
-      params
+      params,
+      version
     }));
   });
 }
@@ -45,6 +46,51 @@ function deckNames(callback) {
       callback({
         success: true,
         deckNames: response
+      });
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
+function modelNames(callback) {
+  ankiInvoke('modelNames').then(response => {
+    if (callback) {
+      callback({
+        success: true,
+        modelNames: response
+      });
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
+function modelFieldsOnTemplates(modelName, callback) {
+  ankiInvoke('modelFieldsOnTemplates', {
+    modelName: modelName,
+  }).then(response => {
+    if (response) {
+      callback({
+        success: true,
+        modelFieldsOnTemplates: response
+      });
+    } else {
+      callback({
+        success: false,
+        message: response
       });
     }
   }).catch(error => {
