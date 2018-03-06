@@ -3,10 +3,10 @@
 // Copyright (c) 2017 Ruzu Studios. All rights reserved.
 
 var not_list = [];
-var qnum = 0;
 var error_not;
 var globalCard;
 var currentDeck;
+var modelSettings;
 
 function ruzuUnescape(string) {
   console.log(string);
@@ -70,29 +70,49 @@ function popUpTest(retry = true) {
               startCardTimer(function(startCardTimerResponse) {
                 if (startCardTimerResponse.success) {
 
-                  if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
-                    var question = thisCard.fields['Front'].value;
-                  } else {
-                    var question = thisCard.fields['Back'].value;
-                  }
-
                   var optionsType;
-                  var optionsTitle;
+                  var vTitle;
+                  var vMessage;
+                  var vContextMessage;
+
+                  if (modelSettings && modelSettings[globalCard.modelName] && modelSettings[globalCard.modelName]['DisplayMode']['mode'] == 'Custom') {
+                    //Use template settings
+                    console.log('Use template settings');
+                    vTitle = modelSettings[globalCard.modelName][globalCard.template]['Question']['title'];
+                    vMessage = modelSettings[globalCard.modelName][globalCard.template]['Question']['subTitle'];
+                    vContextMessage = modelSettings[globalCard.modelName][globalCard.template]['Question']['context'];
+                    //Blank out 0 data
+                    vTitle = globalCard['fields'][vTitle]['value'];
+                    vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
+                    vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : 'Click to show answer...';
+                  } else {
+                    //Use default settings
+                    console.log('Use default settings');
+                    if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
+                      vTitle = thisCard.fields['Front'].value;
+                    } else {
+                      vTitle = thisCard.fields['Back'].value;
+                    }
+                    vMessage = '';
+                    vContextMessage = 'Click to show answer...';
+                  }
 
                   if (true) {
                     optionsType = 'basic';
-                    optionsTitle = ruzuUnescape(question)
+                    vTitle = ruzuUnescape(vTitle);
+                    vMessage = ruzuUnescape(vMessage);
+                    vContextMessage = ruzuUnescape(vContextMessage);
                   } else if (false /*TODO - Add support for images*/ ) {
                     optionsType = 'image';
-                    optionsTitle = 'Image';
+                    vTitle = 'Image';
                   }
 
                   //Prep notification details
                   var options = {
                     type: optionsType,
-                    title: optionsTitle,
-                    message: '',
-                    contextMessage: 'Click to show answer...',
+                    title: vTitle,
+                    message: vMessage,
+                    contextMessage: vContextMessage,
                     iconUrl: 'images/icon48.png',
                     requireInteraction: true
                   };
@@ -168,10 +188,33 @@ function showAns(notifId) {
     if (thisCard && thisCard.cardId == globalCard.cardId && thisCard.deckName == currentDeck) {
       showAnswer(function(showAnswerResponse) {
         if (showAnswerResponse.success) {
-          if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
-            var answer = thisCard.fields['Back'].value;
+
+          var optionsType;
+          var vTitle;
+          var vMessage;
+          var vContextMessage;
+
+          if (modelSettings && modelSettings[globalCard.modelName] && modelSettings[globalCard.modelName]['DisplayMode']['mode'] == 'Custom') {
+            //Use template settings
+            console.log('Use template settings');
+            vTitle = modelSettings[globalCard.modelName][globalCard.template]['Answer']['title'];
+            vMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
+            vContextMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['context'];
+            //Blank out 0 data
+            vTitle = globalCard['fields'][vTitle]['value'];
+            vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
+            vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : '';
           } else {
-            var answer = thisCard.fields['Front'].value;
+            //Use default settings
+            console.log('Use default settings');
+            if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
+              vTitle = thisCard.fields['Front'].value;
+              vMessage = thisCard.fields['Back'].value;
+            } else {
+              vTitle = thisCard.fields['Back'].value;
+              vMessage = thisCard.fields['Front'].value;
+            }
+            vContextMessage = '';
           }
 
           if (thisCard.answerButtons.length == 1) {
@@ -205,9 +248,18 @@ function showAns(notifId) {
             errorNotifiction('internal_error');
           }
 
+          if (true) {
+            vTitle = ruzuUnescape(vTitle);
+            vMessage = ruzuUnescape(vMessage);
+            vContextMessage = ruzuUnescape(vContextMessage);
+          } else if (false /*TODO - Add support for images*/ ) {
+            vTitle = 'Image';
+          }
+
           var options = {
-            message: ruzuUnescape(answer),
-            contextMessage: '',
+            title: vTitle,
+            message: vMessage,
+            contextMessage: vContextMessage,
             buttons: cardButtons
           };
 
@@ -524,8 +576,10 @@ function checkAlarm(alarmName, callback) {
       deckName: defaultDeckName,
       frequency: defaultFrequency,
       enabled: defaultEnabled,
+      modelSettings: defaultmodelSettings
     }, function(settings) {
       currentDeck = settings.deckName;
+      modelSettings = settings.modelSettings;
       callback(settings.enabled, hasAlarm);
     });
   });
@@ -696,7 +750,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
     var storageChange = changes[key];
     // console.log('Storage key ' + key + ' in namespace ' + namespace + ' changed. ' +
     //   'Old value was ' + storageChange.oldValue + ', new value is ' + storageChange.newValue + '.');
-    if ((key == 'enabled' || key == 'frequency' || key == 'deckName') && storageChange.oldValue != storageChange.newValue) {
+    if ((key == 'enabled' || key == 'frequency' || key == 'deckName' || key == 'modelSettings') && storageChange.oldValue != storageChange.newValue) {
       console.log('Reset Alarm...');
       if (error_not) {
         chrome.notifications.clear(error_not);
