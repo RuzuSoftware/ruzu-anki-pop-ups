@@ -7,6 +7,7 @@ var error_not;
 var globalCard;
 var currentDeck;
 var modelSettings;
+var autoSettings = {};
 
 function ruzuUnescape(string) {
   console.log(string);
@@ -81,67 +82,122 @@ function popUpTest(retry = true) {
                     vTitle = modelSettings[globalCard.modelName][globalCard.template]['Question']['title'];
                     vMessage = modelSettings[globalCard.modelName][globalCard.template]['Question']['subTitle'];
                     vContextMessage = modelSettings[globalCard.modelName][globalCard.template]['Question']['context'];
-                    //Blank out 0 data
-                    vTitle = globalCard['fields'][vTitle]['value'];
-                    vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
-                    vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : 'Click to show answer...';
+
+                    showQuestionPart2();
                   } else {
                     //Use default settings
                     console.log('Use default settings');
-                    if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
-                      vTitle = thisCard.fields['Front'].value;
+
+                    if (autoSettings && autoSettings[globalCard.modelName]) {
+                      console.log('Use derived settings');
+                      vTitle = autoSettings[globalCard.modelName][globalCard.template]['Question']['title'];
+                      vMessage = autoSettings[globalCard.modelName][globalCard.template]['Question']['subTitle'];
+                      vContextMessage = autoSettings[globalCard.modelName][globalCard.template]['Question']['context'];
+                      showQuestionPart2();
                     } else {
-                      vTitle = thisCard.fields['Back'].value;
+                      console.log('Calculate and save derived settings');
+
+                      modelFieldsOnTemplates(globalCard.modelName, function(resp) {
+
+                        autoSettings[globalCard.modelName] = {};
+
+                        _.each(resp.modelFieldsOnTemplates, function(value, template) {
+                          autoSettings[globalCard.modelName][template] = {};
+                          autoSettings[globalCard.modelName][template]['Question'] = {};
+                          autoSettings[globalCard.modelName][template]['Answer'] = {};
+                          _.each(value, function(QorAFields, ques_or_ans) {
+                            _.each(QorAFields, function(qaValue, qaKey) {
+                              //console.log('Template: ' + template + ' Q or A?: ' + ques_or_ans + ' qaKey: ' + qaKey + ' qaValue: ' + qaValue);
+                              if (ques_or_ans == 0) {
+                                //Question
+                                if (qaKey == 0) {
+                                  autoSettings[globalCard.modelName][template]['Question'].title = qaValue;
+                                  autoSettings[globalCard.modelName][template]['Answer'].title = qaValue;
+                                  autoSettings[globalCard.modelName][template]['Question'].subTitle = 0;
+                                  autoSettings[globalCard.modelName][template]['Question'].context = 0;
+                                } else if (qaKey == 1) {
+                                  autoSettings[globalCard.modelName][template]['Question'].subTitle = qaValue;
+                                } else {
+                                  console.log('Ignore Question field: ' + qaValue);
+                                }
+                              } else {
+                                //Answer
+                                if (qaKey == 0) {
+                                  autoSettings[globalCard.modelName][template]['Answer'].subTitle = qaValue;
+                                  autoSettings[globalCard.modelName][template]['Answer'].context = 0;
+                                } else if (qaKey == 1) {
+                                  autoSettings[globalCard.modelName][template]['Answer'].context = qaValue;
+                                } else {
+                                  console.log('Ignore Answer field: ' + qaValue);
+                                }
+                              }
+                            });
+                          });
+                        });
+
+                        vTitle = autoSettings[globalCard.modelName][globalCard.template]['Question']['title'];
+                        vMessage = autoSettings[globalCard.modelName][globalCard.template]['Question']['subTitle'];
+                        vContextMessage = autoSettings[globalCard.modelName][globalCard.template]['Question']['context'];
+                        showQuestionPart2();
+                      });
                     }
-                    vMessage = '';
-                    vContextMessage = 'Click to show answer...';
                   }
 
-                  if (true) {
-                    optionsType = 'basic';
-                    vTitle = ruzuUnescape(vTitle);
-                    vMessage = ruzuUnescape(vMessage);
-                    vContextMessage = ruzuUnescape(vContextMessage);
-                  } else if (false /*TODO - Add support for images*/ ) {
-                    optionsType = 'image';
-                    vTitle = 'Image';
-                  }
+                  function showQuestionPart2() {
+                    console.log('showQuestionPart2');
 
-                  //Prep notification details
-                  var options = {
-                    type: optionsType,
-                    title: vTitle,
-                    message: vMessage,
-                    contextMessage: vContextMessage,
-                    iconUrl: 'images/icon48.png',
-                    requireInteraction: true
-                  };
-                  //Must be done after the above
-                  if (optionsType == 'image') {
-                    options.imageUrl = question;
-                  }
+                    vTitle = globalCard['fields'][vTitle]['value'];
+                    vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
+                    vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : ((vMessage != '') ? '' : 'Click to show answer...'); //'Click to show answer...';
 
-                  if (error_not) {
-                    chrome.notifications.clear(error_not);
-                  }
+                    if (true) {
+                      optionsType = 'basic';
+                      vTitle = ruzuUnescape(vTitle);
+                      vMessage = ruzuUnescape(vMessage);
+                      vContextMessage = ruzuUnescape(vContextMessage);
+                    } else if (false /*TODO - Add support for images*/ ) {
+                      optionsType = 'image';
+                      vTitle = 'Image';
+                    }
 
-                  //Ensure icon status is correct)
-                  setIconStatus('On');
+                    //Prep notification details
+                    var options = {
+                      type: optionsType,
+                      title: vTitle,
+                      message: vMessage,
+                      contextMessage: vContextMessage,
+                      iconUrl: 'images/icon48.png',
+                      requireInteraction: true
+                    };
+                    //Must be done after the above
+                    if (optionsType == 'image') {
+                      options.imageUrl = question;
+                    }
 
-                  //Create notifications and add to array for tracking
-                  chrome.notifications.create('', options, function(id) {
-                    //Add notification to array
-                    not_list.push({
-                      notID: id,
-                      stage: 1
+                    if (error_not) {
+                      chrome.notifications.clear(error_not);
+                    }
+
+                    //Ensure icon status is correct)
+                    setIconStatus('On');
+
+                    //Create notifications and add to array for tracking
+                    chrome.notifications.create('', options, function(id) {
+                      //Add notification to array
+                      not_list.push({
+                        notID: id,
+                        stage: 1
+                      });
+
+                      if (not_list.length > 1) {
+                        var removeNotID = not_list.shift().notID;
+                        //Clear overflow notification
+                        chrome.notifications.clear(removeNotID);
+                      }
                     });
 
-                    if (not_list.length > 1) {
-                      var removeNotID = not_list.shift().notID;
-                      //Clear overflow notification
-                      chrome.notifications.clear(removeNotID);
-                    }
-                  });
+                  }
+
                 } else {
                   console.log('Issue starting card timer...');
                   console.log(startCardTimerResponse);
@@ -200,22 +256,23 @@ function showAns(notifId) {
             vTitle = modelSettings[globalCard.modelName][globalCard.template]['Answer']['title'];
             vMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
             vContextMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['context'];
-            //Blank out 0 data
-            vTitle = globalCard['fields'][vTitle]['value'];
-            vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
-            vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : '';
           } else {
-            //Use default settings
-            console.log('Use default settings');
-            if (thisCard.fieldOrder == thisCard.fields['Front'].order) {
-              vTitle = thisCard.fields['Front'].value;
-              vMessage = thisCard.fields['Back'].value;
+            //Use default/derived settings
+            console.log('Use derived settings');
+            if (autoSettings && autoSettings[globalCard.modelName]) {
+              vTitle = autoSettings[globalCard.modelName][globalCard.template]['Answer']['title'];
+              vMessage = autoSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
+              vContextMessage = autoSettings[globalCard.modelName][globalCard.template]['Answer']['context'];
             } else {
-              vTitle = thisCard.fields['Back'].value;
-              vMessage = thisCard.fields['Front'].value;
+              console.log('There was an error calculating answer fields, use custom display mode as a workaround...');
+              errorNotifiction();
             }
-            vContextMessage = '';
           }
+
+          //Blank out 0 data
+          vTitle = globalCard['fields'][vTitle]['value'];
+          vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
+          vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : '';
 
           if (thisCard.answerButtons.length == 1) {
             var cardButtons = [{
@@ -580,6 +637,7 @@ function checkAlarm(alarmName, callback) {
     }, function(settings) {
       currentDeck = settings.deckName;
       modelSettings = settings.modelSettings;
+      autoSettings = {};
       callback(settings.enabled, hasAlarm);
     });
   });
