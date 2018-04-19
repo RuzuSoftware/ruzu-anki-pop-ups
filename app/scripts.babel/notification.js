@@ -64,7 +64,7 @@ function popUpTest(retry = true) {
       getNextCard(function(thisCard) {
         if (thisCard && thisCard.deckName == currentDeck) {
           globalCard = thisCard; //For debug purposes only
-          console.log('Card collected, now show question...');
+          console.log('Card collected, showing question...');
           showQuestion(function(showQuestionResponse) {
             if (showQuestionResponse.success) {
               startCardTimer(function(startCardTimerResponse) {
@@ -181,7 +181,6 @@ function popUpTest(retry = true) {
                     setIconStatus('On');
 
                     //Create notifications and add to array for tracking
-                    console.log(options);
                     chrome.notifications.create('', options, function(id) {
                       //Add notification to array
                       not_list.push({
@@ -199,14 +198,14 @@ function popUpTest(retry = true) {
                   }
 
                 } else {
-                  console.log('Issue starting card timer...');
-                  console.log(startCardTimerResponse);
+                  console.error('Issue starting card timer...');
+                  console.error(startCardTimerResponse);
                   errorNotifiction('internal_error');
                 }
               });
             } else {
-              console.log('Issue showing question...');
-              console.log(showQuestionResponse);
+              console.error('Issue showing question...');
+              console.error(showQuestionResponse);
               errorNotifiction('internal_error');
             }
           });
@@ -264,7 +263,7 @@ function showAns(notifId) {
               vMessage = autoSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
               vContextMessage = autoSettings[globalCard.modelName][globalCard.template]['Answer']['context'];
             } else {
-              console.log('There was an error calculating answer fields, use custom display mode as a workaround...');
+              console.error('There was an error calculating answer fields, use custom display mode as a workaround...');
               errorNotifiction();
             }
           }
@@ -301,7 +300,7 @@ function showAns(notifId) {
             }];
             var stages = 2;
           } else {
-            console.log('Cards with more than 4 possible answers are not supported...');
+            console.error('Cards with more than 4 possible answers are not supported...');
             errorNotifiction('internal_error');
           }
 
@@ -332,7 +331,7 @@ function showAns(notifId) {
             }
           });
         } else {
-          console.log('There was an error showing the answer...');
+          console.error('There was an error showing the answer...');
           errorNotifiction();
         }
       });
@@ -344,7 +343,7 @@ function showAns(notifId) {
         console.log('Deck has been changed, ...');
         popUpTest();
       } else {
-        console.log('There was an error showing the answer...');
+        console.error('There was an error showing the answer...');
         errorNotifiction(); //was 'no_results'
       }
     }
@@ -468,7 +467,7 @@ function answerQuestion(validNot, btnIdx) {
         console.log(thisCard.cardId + ' != ' + validNot.cardId);
         popUpTest();
       } else {
-        console.log('There was an issue answering this card...');
+        console.error('There was an issue answering this card...');
         errorNotifiction('no_results');
       }
     }
@@ -478,7 +477,7 @@ function answerQuestion(validNot, btnIdx) {
 function sendAnswer(ans_ease) {
   answerCard(ans_ease, function(ansResp) {
     if (!ansResp.success) {
-      console.log(ansResp);
+      console.error(ansResp);
       errorNotifiction('sendAnswerFail');
     }
   });
