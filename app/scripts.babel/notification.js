@@ -10,7 +10,6 @@ var modelSettings;
 var autoSettings = {};
 
 function ruzuUnescape(string) {
-  console.log(string);
   return _.unescape(string)
     .replace(/&nbsp;/g, ' ')
     .replace(/<div>/g, ' ')
@@ -144,11 +143,10 @@ function popUpTest(retry = true) {
                   }
 
                   function showQuestionPart2() {
-                    console.log('showQuestionPart2');
 
                     vTitle = globalCard['fields'][vTitle]['value'];
-                    vMessage = (vMessage != 0) ? globalCard['fields'][vMessage]['value'] : '';
-                    vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : ((vMessage != '') ? '' : 'Click to show answer...'); //'Click to show answer...';
+                    vMessage = (vMessage != 0) ? ((globalCard['fields'][vMessage]['value'] == '') ? ' ' : globalCard['fields'][vMessage]['value']) : ' ';
+                    vContextMessage = (vContextMessage != 0) ? globalCard['fields'][vContextMessage]['value'] : ((vMessage != ' ') ? '' : 'Click to show answer...');
 
                     if (true) {
                       optionsType = 'basic';
@@ -169,6 +167,7 @@ function popUpTest(retry = true) {
                       iconUrl: 'images/icon48.png',
                       requireInteraction: true
                     };
+
                     //Must be done after the above
                     if (optionsType == 'image') {
                       options.imageUrl = question;
@@ -182,6 +181,7 @@ function popUpTest(retry = true) {
                     setIconStatus('On');
 
                     //Create notifications and add to array for tracking
+                    console.log(options);
                     chrome.notifications.create('', options, function(id) {
                       //Add notification to array
                       not_list.push({
@@ -252,13 +252,13 @@ function showAns(notifId) {
 
           if (modelSettings && modelSettings[globalCard.modelName] && modelSettings[globalCard.modelName]['DisplayMode']['mode'] == 'Custom') {
             //Use template settings
-            console.log('Use template settings');
+            console.log('Using template settings');
             vTitle = modelSettings[globalCard.modelName][globalCard.template]['Answer']['title'];
             vMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
             vContextMessage = modelSettings[globalCard.modelName][globalCard.template]['Answer']['context'];
           } else {
             //Use default/derived settings
-            console.log('Use derived settings');
+            console.log('Using derived settings');
             if (autoSettings && autoSettings[globalCard.modelName]) {
               vTitle = autoSettings[globalCard.modelName][globalCard.template]['Answer']['title'];
               vMessage = autoSettings[globalCard.modelName][globalCard.template]['Answer']['subTitle'];
