@@ -1,6 +1,6 @@
 'use strict';
 
-var requiredVersion = 5;
+var requiredVersion = 6;
 var alarmName = 'RuzuAnki';
 var spacer = '•'; //'♦';
 

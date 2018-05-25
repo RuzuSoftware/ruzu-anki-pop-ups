@@ -49,6 +49,13 @@ function connectToAnki(callback) {
           });
         }
       }
+    } else if (xhr.readyState == 4 && xhr.status != 200) {
+      if (callback) {
+        callback({
+          success: false,
+          version: 0
+        });
+      }
     }
   }
   xhr.send(JSON.stringify({
@@ -73,6 +80,7 @@ function restore_options() {
           showMessage('Error connecting to Anki.');
         } else {
           showMessage('Please download the latest version of AnkiConnect and try again.');
+          $('#connection_error_msg').text('Please download the latest version of AnkiConnect and try again.');
         }
         setIconStatus('Error');
         $('#connection_error').show();
