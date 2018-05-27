@@ -40,6 +40,25 @@ function checkVersion(callback) {
   });
 }
 
+function updateAnkiConnect(callback) {
+  ankiInvoke('upgrade').then(response => {
+    if (callback) {
+      callback({
+        success: true,
+        version: response
+      });
+    }
+  }).catch(error => {
+    console.log(`Error: ${error}`);
+    if (callback) {
+      callback({
+        success: false,
+        message: error
+      });
+    }
+  });
+}
+
 function deckNames(callback) {
   ankiInvoke('deckNames').then(response => {
     if (callback) {

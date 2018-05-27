@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Update AnkiConnect</title>
+  <link href="styles/bootstrap.min.css" rel="stylesheet">
+  <link href="styles/pages.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="page-header">
+    <h3><img src="images/icon128.png" width="50" height="50" style="width: 50px; height: 50px; margin-right:10px;">Ruzu Anki pop-ups</h3>
+  </div>
+  <h4>Update AnkiConnect</h4>
+  </br>
+
+  <p>This page can be used to easily update AnkiConnect. Follow the steps below to perform an update.</p>
+  <ol>
+    <li>Open Anki</li>
+    <li>Click the button below to prompt AnkiConnect to update</li>
+    <button id="updateAnkiConnect" class="btn btn-primary">Update AnkiConnect</button>
+    <li>Navigate to Anki and confirm that you would like to update AnkiConnect</li>
+    <img src="images/update_ac.png">
+    <li>Restart Anki</li>
+  </ol>
+
+  <p>For more info on how to use Ruzu Anki pop-ups, please look at the <a href="/welcome.html">getting started</a> page.</p>
+
+  <!-- build:js scripts/update.js -->
+  <script src="scripts/config.js"></script>
+  <script src="scripts/ankiConnect.js"></script>
+  <script src="scripts/update.js"></script>
+  <!-- endbuild -->
+</body>
+
+</html>

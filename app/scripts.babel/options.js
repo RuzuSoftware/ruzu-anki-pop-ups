@@ -78,9 +78,10 @@ function restore_options() {
       if (!connectResp.success || connectResp.version < requiredVersion) {
         if (!connectResp.success) {
           showMessage('Error connecting to Anki.');
+          $('#connection_error_msg').html('Please ensure that Anki is running and try again. <br/>See the <a href="/welcome.html" target="_blank">getting started</a> page for help.');
         } else {
           showMessage('Please download the latest version of AnkiConnect and try again.');
-          $('#connection_error_msg').text('Please download the latest version of AnkiConnect and try again.');
+          $('#connection_error_msg').html('Please download the latest version of AnkiConnect <a href="/update.html" target="_blank">here</a> and try again.');
         }
         setIconStatus('Error');
         $('#connection_error').show();
