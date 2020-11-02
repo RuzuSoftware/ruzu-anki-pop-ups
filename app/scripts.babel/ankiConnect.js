@@ -1,12 +1,12 @@
 'use strict';
 
-function ankiInvoke(action, params = {}, version = null) {
+function ankiInvoke(action, params = {}, version = 6) {
   console.log(action + ' called...');
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.addEventListener('loadend', () => {
       if (xhr.responseText) {
-        resolve(JSON.parse(xhr.responseText));
+        resolve(JSON.parse(xhr.responseText).result);
       } else {
         reject('Unable to connect to Anki');
       }
