@@ -13,7 +13,7 @@ Some of the main features include:
 - Currently supports text based Anki decks and models only.
 - Configure how card fields are displayed for each model.
 
-### Requirements
+## Requirements
 Ruzu Anki Pop-ups requires the [AnkiConnect](https://ankiweb.net/shared/info/2055492159) Anki plugin to be installed in order to function. More technical information on AnkiConnect can be found in the [AnkiConnect Github Repo](https://github.com/FooSoft/anki-connect).
 
 ## Chrome Web Store
@@ -25,8 +25,11 @@ The extension can be installed for free by visiting the Chrome Web Store via thi
 Ruzu Anki Pop-ups can was developed using [Chrome Extension generator (v0.6.1)](https://github.com/yeoman/generator-chrome-extension/tree/v0.6.1) and can be built locally using glup and loaded into Chrome web browser as an 'unpacked extension' for local testing.
 
 ### Initial setup
+- This project uses gulp v3.9.1, which is compatible with node v10 or lower:
+`https://nodejs.org/dist/v10.9.0/`
+
 - Ensure `gulp` and `bower` are installed on your system
-`npm install --global yo gulp bower`
+`npm install --global gulp bower`
 
 - Install local requirements
 `npm install && bower install`
@@ -40,3 +43,6 @@ Use watch command to update source continuously
 
 Package code into a zip, ready for publishing
 `gulp package`
+
+## Notice - [ruzu-pop-ups](https://github.com/RuzuStudios/ruzu-pop-ups) native plugin
+I've started development on a native [Anki](https://apps.ankiweb.net/) plugin which allows similar functionality to ruzu-anki-popups with support for html and css formatting in Anki card pop-ups. Please check here to find out more: **[RuzuStudios/ruzu-pop-ups](https://github.com/RuzuStudios/ruzu-pop-ups)**
