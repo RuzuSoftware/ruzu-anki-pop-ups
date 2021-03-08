@@ -1,6 +1,8 @@
 
 # Ruzu Anki Pop-ups
 
+![](media/Small%20tile.jpg)
+
 Ruzu Anki Pop-ups is a Chrome extension that periodically presents Anki cards via notifications
 This Chrome extension allows you to review Anki decks whilst working on other important tasks by harnessing the power of desktop notifications! Cards from your chosen deck will periodically pop up for you to review.
 
